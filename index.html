@@ -131,6 +131,7 @@ tr:last-child td{border-bottom:0}
 .wsmsg{font-size:13.5px}
 .wsmsg:empty{display:none}
 .wsmsg.bad{color:var(--bad)}
+.wsmsg code{font:600 12px var(--mono);background:var(--sunk);padding:1px 5px;border-radius:3px;color:var(--ink)}
 .wslinks{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
 .wslinks:empty{display:none}
 .wslinks a{font:600 12.5px var(--sans);color:var(--accent);text-decoration:none;border:1px solid var(--line);background:var(--surface);padding:5px 9px;border-radius:5px}
@@ -225,7 +226,7 @@ tr:last-child td{border-bottom:0}
 
       <section class="panel websearch" id="websearch">
         <div class="wshead"><h3>Buscador de precios web</h3><span class="wsbadge" id="ws-mode"></span></div>
-        <p class="wsintro">Para materiales que no están en el listado. Busca en tiendas de Colombia, marca mínimo 3 precios y se agrega a la lista el promedio antes de IVA.</p>
+        <p class="wsintro">Para materiales que no están en el listado. Busca primero en Interelectricas y Homecenter; si no hay 3 precios, amplía a otras tiendas de Colombia. Marca mínimo 3 y se agrega a la lista el promedio antes de IVA.</p>
         <form class="searchbox" id="ws-form" role="search">
           <input id="ws-q" type="search" autocomplete="off" enterkeyhint="search" placeholder="Ej: tubo IMC 1/2 x 3 m" aria-label="Material a buscar en la web">
           <button class="btn primary big" id="ws-go" type="submit">Buscar</button>
@@ -416,6 +417,7 @@ const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 function webLinks(qs){
   const e=encodeURIComponent(qs);
   return [
+    ['Interelectricas',`https://www.google.com/search?gl=co&hl=es&q=${encodeURIComponent('site:interelectricas.com.co '+qs)}`],
     ['Homecenter',`https://www.homecenter.com.co/homecenter-co/search?Ntt=${e}`],
     ['Mercado Libre',`https://listado.mercadolibre.com.co/${encodeURIComponent(qs.trim().replace(/\s+/g,'-'))}`],
     ['Google Shopping',`https://www.google.com/search?tbm=shop&gl=co&hl=es&q=${e}`],
@@ -481,14 +483,13 @@ async function wsBuscar(){
   if(q.length<3){ wsMsg('Escribe el material con su medida. Ej: <b>tubo IMC 1/2</b>.',true); return; }
   WS.material=q; $('ws-name').value=q;
   if(!AUTO.on){
-    if(!WS.refs.length){ for(let i=0;i<3;i++) WS.refs.push({manual:true,sel:true,incluye_iva:true}); }
-    wsMsg('La búsqueda automática no está activa. Abre los enlaces y copia 3 precios con su tienda y enlace.'); wsRender(); return;
+    wsMsg('<b>La búsqueda automática está apagada</b> porque el servidor no tiene configurada la clave <code>ANTHROPIC_API_KEY</code> en Render. Mientras tanto, abre las tiendas, copia mínimo 3 precios y regístralos con <b>+ Precio manual</b>.',true); wsRender(); return;
   }
   if(AUTO.busy) return;
   let cod=getCodigo();
   if(AUTO.codigo && !cod){ cod=(prompt('Código de acceso para la búsqueda web:')||'').trim(); if(!cod) return; setCodigo(cod); }
   AUTO.busy=true; const b=$('ws-go'); b.disabled=true; b.innerHTML='<span class="spin"></span>Buscando';
-  wsMsg(`Buscando “${esc(q)}” en tiendas de Colombia… tarda entre 20 y 60 segundos.`);
+  wsMsg(`Buscando “${esc(q)}” en Interelectricas, Homecenter y otras tiendas de Colombia… tarda entre 20 y 90 segundos.`);
   WS.refs=[]; wsRender();
   try{
     const r=await fetch('api/precios-web',{method:'POST',headers:{'Content-Type':'application/json','X-Codigo-Acceso':cod},body:JSON.stringify({material:q})});

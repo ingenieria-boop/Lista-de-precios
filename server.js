@@ -6,6 +6,7 @@
 //   CODIGO_ACCESO      (opcional: si se define, la app lo pide antes de buscar)
 //   CLAUDE_MODEL       (opcional, por defecto claude-sonnet-4-5)
 //   LIMITE_POR_HORA    (opcional, búsquedas por IP por hora, por defecto 30)
+//   TIENDAS            (opcional, dominios donde se busca primero, separados por coma)
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -46,24 +47,31 @@ function leerCuerpo(req) {
   });
 }
 
-const PROMPT = material => `Busca en la web el precio actual en Colombia (pesos colombianos, COP) de este material eléctrico:
+// Tiendas donde se busca primero (se pueden cambiar con la variable TIENDAS, separadas por coma)
+const TIENDAS = (process.env.TIENDAS || 'interelectricas.com.co,homecenter.com.co,easy.com.co,mercadolibre.com.co')
+  .split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+const MINIMO = 3;
+
+const PROMPT = (material, restringida, yaTengo) => `Busca en la web el precio actual en Colombia (pesos colombianos, COP) de este material eléctrico:
 
 "${material}"
 
 Reglas:
-- Busca en tiendas o distribuidores que vendan en Colombia (por ejemplo Homecenter, Mercado Libre Colombia, Easy, distribuidores eléctricos colombianos). Nada de tiendas de otros países.
-- Cada precio debe venir de una página que hayas visto en los resultados de búsqueda, con su enlace exacto. No inventes precios ni enlaces.
+- ${restringida
+    ? `Busca SOLO en estas tiendas: ${TIENDAS.join(', ')}. Empieza por Interelectricas (interelectricas.com.co) y Homecenter (homecenter.com.co).`
+    : 'Busca en tiendas o distribuidores eléctricos que vendan en Colombia (ferreterías, distribuidores eléctricos, Mercado Libre Colombia). Nada de tiendas de otros países.'}
+${yaTengo.length ? `- Ya tengo estos enlaces, NO los repitas: ${yaTengo.join(' , ')}\n` : ''}- Cada precio debe venir de una página que hayas visto en los resultados de búsqueda, con su enlace exacto a la página del producto. No inventes precios ni enlaces.
 - Interpreta el lenguaje de obra: "tubo imc" = tubería conduit IMC galvanizada, "emt" = conduit EMT, "breaker" = interruptor automático / breaker enchufable, "thhn 12" = cable THHN/THWN calibre 12 AWG.
-- Si la descripción no trae medida, calibre o amperaje, busca la presentación más común en obra (por ejemplo tubo de 3 m de 1/2" o 3/4") y dilo en "nota".
-- Marca "coincidencia":"exacta" si el producto coincide con lo pedido (medida, calibre, amperaje), o "similar" si es un producto parecido pero con alguna diferencia. Incluye los similares solo si no hay suficientes exactos.
+- Si la descripción no trae medida, calibre o amperaje, busca la presentación más común en obra (por ejemplo tubo de 3 m de 1/2") y dilo en "nota".
+- Marca "coincidencia":"exacta" si el producto coincide con lo pedido (medida, calibre, amperaje), o "similar" si es parecido pero con alguna diferencia.
 - Indica la presentación del precio en "presentacion" (unidad, tubo de 3 m, rollo de 100 m, metro, caja x 10...).
-- Da el precio tal como lo muestra la tienda e indica si incluye IVA (en Colombia los precios al público normalmente lo incluyen).
-- Busca entre 3 y 6 referencias, de tiendas distintas si es posible. Si no encuentras ninguna, devuelve la lista vacía y explica en "nota" qué dato falta.
+- Da el precio tal como lo muestra la tienda e indica si incluye IVA (si la página dice "+ IVA" o "antes de IVA", incluye_iva=false).
+- Busca mínimo ${MINIMO} y máximo 6 referencias, cada una de una página distinta. Si no encuentras ninguna, devuelve la lista vacía y explica en "nota" qué dato falta.
 
 Responde SOLO con un JSON válido, sin texto adicional, con esta forma:
-{"referencias":[{"precio":12345,"incluye_iva":true,"tienda":"Nombre de la tienda","url":"https://...","producto":"nombre del producto en la tienda","presentacion":"unidad / tubo de 3 m / rollo 100 m ...","coincidencia":"exacta"}],"nota":"observación breve en español o cadena vacía"}`;
+{"referencias":[{"precio":12345,"incluye_iva":true,"tienda":"Nombre de la tienda","url":"https://...","producto":"nombre del producto en la tienda","presentacion":"tubo de 3 m","coincidencia":"exacta"}],"nota":"observación breve en español o cadena vacía"}`;
 
-async function llamarClaude(messages) {
+async function llamarClaude(messages, dominios) {
   const r = await fetch(API_URL, {
     method: 'POST',
     headers: {
@@ -79,6 +87,7 @@ async function llamarClaude(messages) {
         type: 'web_search_20250305',
         name: 'web_search',
         max_uses: 6,
+        ...(dominios ? { allowed_domains: dominios } : {}),
         user_location: { type: 'approximate', country: 'CO', city: 'Bucaramanga', region: 'Santander', timezone: 'America/Bogota' },
       }],
     }),
@@ -110,12 +119,12 @@ function normUrl(u) {
   catch { return ''; }
 }
 
-async function buscarPrecios(material) {
-  const messages = [{ role: 'user', content: PROMPT(material) }];
+async function buscarUnaVez(material, restringida, yaTengo) {
+  const messages = [{ role: 'user', content: PROMPT(material, restringida, yaTengo) }];
   const vistas = new Set();   // URLs que realmente aparecieron en la búsqueda
   let data, texto = '';
   for (let i = 0; i < 4; i++) {
-    data = await llamarClaude(messages);
+    data = await llamarClaude(messages, restringida ? TIENDAS : null);
     for (const b of data.content || []) {
       if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) {
         for (const r of b.content) if (r.url) vistas.add(normUrl(r.url));
@@ -128,19 +137,18 @@ async function buscarPrecios(material) {
     if (data.stop_reason !== 'pause_turn') break;
     messages.push({ role: 'assistant', content: data.content });
   }
-  const out = extraerJSON(texto);
-  console.log(`[busqueda] "${material}" · urls vistas: ${vistas.size} · stop: ${data.stop_reason}`);
-  if (!out || !Array.isArray(out.referencias)) throw new Error('No se pudo leer la respuesta de la búsqueda.');
-
-  const refs = [], descartadas = [];
+  const out = extraerJSON(texto) || { referencias: [], nota: '' };
+  const refs = [];
+  let descartadas = 0;
   const vistasHost = new Set([...vistas].map(u => u.split('/')[0]));
-  for (const r of out.referencias) {
+  for (const r of Array.isArray(out.referencias) ? out.referencias : []) {
     const precio = aPesos(r.precio);
     const url = String(r.url || '');
     const n = normUrl(url);
     const ok = precio > 0 && /^https?:\/\//.test(url) && r.tienda &&
       (vistas.has(n) || vistasHost.has(n.split('/')[0]));
-    const ref = {
+    if (!ok) { descartadas++; continue; }
+    refs.push({
       precio,
       incluye_iva: r.incluye_iva !== false,
       tienda: String(r.tienda || '').slice(0, 80),
@@ -149,11 +157,27 @@ async function buscarPrecios(material) {
       presentacion: String(r.presentacion || '').slice(0, 80),
       coincidencia: r.coincidencia === 'similar' ? 'similar' : 'exacta',
       verificada: vistas.has(n),
-    };
-    (ok ? refs : descartadas).push(ref);
+    });
   }
-  console.log(`[busqueda] "${material}" · validas: ${refs.length} · descartadas: ${descartadas.length}`);
-  return { material, referencias: refs.slice(0, 6), descartadas: descartadas.length, nota: String(out.nota || ''), modelo: MODEL };
+  console.log(`[busqueda] "${material}" · ${restringida ? 'tiendas preferidas' : 'web abierta'} · urls vistas: ${vistas.size} · validas: ${refs.length} · descartadas: ${descartadas}`);
+  return { refs, descartadas, nota: String(out.nota || '') };
+}
+
+async function buscarPrecios(material) {
+  // 1) tiendas preferidas (Interelectricas, Homecenter...)
+  const a = await buscarUnaVez(material, true, []);
+  let refs = a.refs, descartadas = a.descartadas, nota = a.nota;
+  // 2) si faltan referencias exactas para llegar al mínimo, se amplía a toda la web de Colombia
+  if (refs.filter(r => r.coincidencia === 'exacta').length < MINIMO) {
+    const b = await buscarUnaVez(material, false, refs.map(r => r.url));
+    const ya = new Set(refs.map(r => normUrl(r.url)));
+    refs = refs.concat(b.refs.filter(r => !ya.has(normUrl(r.url))));
+    descartadas += b.descartadas;
+    if (!nota) nota = b.nota;
+  }
+  const pref = r => TIENDAS.some(t => normUrl(r.url).startsWith(t) || normUrl(r.url).includes('.' + t)) ? 0 : 1;
+  refs.sort((x, y) => (x.coincidencia === 'exacta' ? 0 : 1) - (y.coincidencia === 'exacta' ? 0 : 1) || pref(x) - pref(y));
+  return { material, referencias: refs.slice(0, 8), descartadas, nota, tiendas: TIENDAS, modelo: MODEL };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -166,7 +190,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'GET' && url.pathname === '/api/estado') {
-    return json(res, 200, { busqueda_web: !!API_KEY, pide_codigo: !!CODIGO });
+    return json(res, 200, { busqueda_web: !!API_KEY, pide_codigo: !!CODIGO, tiendas: TIENDAS });
   }
 
   if (req.method === 'POST' && url.pathname === '/api/precios-web') {
