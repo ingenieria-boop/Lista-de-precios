@@ -1,3 +1,7 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Precios ELYCON</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -114,6 +118,14 @@ tr:last-child td{border-bottom:0}
 .corr{font-size:13px;color:var(--muted);margin:-4px 0 10px}
 .corr b{color:var(--accent);font-weight:600}
 .corr s{opacity:.7}
+.autobox{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 12px;border:1px dashed var(--accent);border-radius:6px;background:var(--accent-soft)}
+.autobox .btn.primary{display:inline-flex;align-items:center;gap:8px}
+.autobox .msg{font-size:13px;color:var(--ink)}
+.autobox .msg.bad{color:var(--bad)}
+.spin{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.refinfo{grid-column:1/-1;font-size:11.5px;color:var(--muted);margin:-2px 0 4px}
+.refinfo .warn{color:var(--warn)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -144,6 +156,10 @@ tr:last-child td{border-bottom:0}
       <form class="panel webform" id="webform" hidden novalidate>
         <h3>Precio tomado de la web</h3>
         <p>Para materiales que no están en el listado. Registra mínimo 3 precios, cada uno con la tienda y el enlace de donde lo tomaste. La lista usa el promedio antes de IVA.</p>
+        <div class="autobox" id="w-auto">
+          <button type="button" class="btn primary" id="w-buscar">Buscar precios en la web</button>
+          <span class="msg" id="w-msg">Busca automáticamente en tiendas de Colombia y llena las referencias. Revisa cada enlace antes de agregar.</span>
+        </div>
         <div class="field"><label for="w-art">Material</label><input type="text" id="w-art" placeholder="Ej: Tubo EMT 3/4 x 3 m"></div>
         <div class="refs">
           <div class="refhead"><span>Precio</span><span>Tienda / fuente</span><span>Enlace</span><span></span></div>
@@ -344,13 +360,19 @@ function renderWebbar(qs,r){
   const weak = !r.length || r[0].s<0.6;
   wb.innerHTML = `<b>${weak?'No está en el listado. Busca el precio en la web:':'¿No es ninguno? Busca en la web:'}</b>`
     + webLinks(qs).map(([n,u])=>`<a href="${u}" target="_blank" rel="noopener">${n} ↗</a>`).join('')
-    + `<button type="button" class="btn ${weak?'primary':''}" id="w-open">Registrar precios web</button>`;
+    + `<button type="button" class="btn ${weak?'primary':''}" id="w-open">${AUTO.on?'Buscar precio en la web':'Registrar precios web'}</button>`;
 }
-function refRow(){
+function refRow(v){
   const n=$('refs').children.length;
   const d=document.createElement('div'); d.className='refrow';
   d.innerHTML=`<input type="number" min="0" step="any" id="w-p-${n}" placeholder="$" aria-label="Precio"><input type="text" id="w-f-${n}" placeholder="Tienda" aria-label="Tienda"><input type="url" id="w-u-${n}" placeholder="https://…" aria-label="Enlace"><button type="button" class="rm" data-rmref aria-label="Quitar referencia">×</button>`;
   $('refs').appendChild(d);
+  if(v){
+    const i=d.querySelectorAll('input'); i[0].value=v.precio; i[1].value=v.tienda; i[2].value=v.url;
+    const info=document.createElement('div'); info.className='refinfo';
+    info.innerHTML=esc(v.producto||'')+(v.presentacion?` · <b>${esc(v.presentacion)}</b>`:'')+(v.verificada?'':' · <span class="warn">enlace no confirmado, revísalo</span>');
+    d.appendChild(info);
+  }
 }
 function readRefs(){
   return [...$('refs').children].map(r=>{const i=r.querySelectorAll('input');return {p:parseFloat(i[0].value),f:i[1].value.trim(),u:i[2].value.trim()};})
@@ -366,8 +388,41 @@ function webStats(){
 function openWeb(){
   const f=$('webform'); f.hidden=false; $('refs').innerHTML=''; for(let i=0;i<3;i++) refRow();
   $('w-art').value=$('q').value.trim(); $('w-err').textContent=''; webStats();
+  $('w-auto').hidden=!AUTO.on; setMsg('Busca automáticamente en tiendas de Colombia y llena las referencias. Revisa cada enlace antes de agregar.');
   f.scrollIntoView({behavior:'smooth',block:'start'}); $('w-art').focus();
+  if(AUTO.on && $('w-art').value.length>=3) buscarWeb();
 }
+
+/* ---- búsqueda automática (servidor) ---- */
+const AUTO={on:false,codigo:false,busy:false};
+function setMsg(t,bad){ const m=$('w-msg'); m.textContent=t; m.className='msg'+(bad?' bad':''); }
+function getCodigo(){ try{return localStorage.getItem('elycon-codigo')||'';}catch(e){return '';} }
+function setCodigo(v){ try{ v?localStorage.setItem('elycon-codigo',v):localStorage.removeItem('elycon-codigo'); }catch(e){} }
+async function buscarWeb(){
+  if(AUTO.busy) return;
+  const mat=$('w-art').value.trim();
+  if(mat.length<3){ setMsg('Escribe el material con su medida.',true); return; }
+  let cod=getCodigo();
+  if(AUTO.codigo && !cod){ cod=(prompt('Código de acceso para la búsqueda web:')||'').trim(); if(!cod) return; setCodigo(cod); }
+  AUTO.busy=true; const b=$('w-buscar'); b.disabled=true; b.innerHTML='<span class="spin"></span>Buscando…';
+  setMsg(`Buscando “${mat}” en tiendas de Colombia. Tarda entre 20 y 60 segundos.`);
+  try{
+    const r=await fetch('api/precios-web',{method:'POST',headers:{'Content-Type':'application/json','X-Codigo-Acceso':cod},body:JSON.stringify({material:mat})});
+    const d=await r.json().catch(()=>({error:'Respuesta inválida del servidor.'}));
+    if(r.status===401) setCodigo('');
+    if(!r.ok) throw new Error(d.error||('Error '+r.status));
+    const refs=d.referencias||[];
+    if(!refs.length){ setMsg('No encontré precios confiables en la web. Prueba con otra descripción o usa los enlaces de búsqueda.',true); return; }
+    $('refs').innerHTML=''; refs.forEach(x=>refRow(x)); while($('refs').children.length<3) refRow();
+    const todosIva=refs.every(x=>x.incluye_iva), ninguno=refs.every(x=>!x.incluye_iva);
+    if(todosIva) $('w-iva').checked=true; else if(ninguno) $('w-iva').checked=false;
+    webStats();
+    setMsg(`${refs.length} referencia${refs.length===1?'':'s'} encontrada${refs.length===1?'':'s'}${d.cache?' (búsqueda reciente)':''}. ${(!todosIva&&!ninguno)?'Ojo: unas incluyen IVA y otras no; ajusta los precios. ':''}${d.nota?d.nota+' ':''}Revisa cada enlace y la presentación antes de agregar.`);
+  }catch(e){ setMsg(e.message||'Falló la búsqueda.',true); }
+  finally{ AUTO.busy=false; b.disabled=false; b.textContent='Buscar precios en la web'; }
+}
+$('w-buscar').addEventListener('click',buscarWeb);
+fetch('api/estado').then(r=>r.ok?r.json():null).then(d=>{ if(d&&d.busqueda_web){ AUTO.on=true; AUTO.codigo=!!d.pide_codigo; renderResults(); } }).catch(()=>{});
 document.addEventListener('click',e=>{
   if(e.target.id==='w-open') openWeb();
   if(e.target.matches('[data-rmref]')){ e.target.closest('.refrow').remove(); webStats(); }
@@ -482,3 +537,4 @@ let tm; $('q').addEventListener('input',()=>{ clearTimeout(tm); tm=setTimeout(re
 $('meta').textContent = `${DATA.length.toLocaleString('es-CO').replace(/,/g,'.')} artículos · precios de venta antes de IVA`;
 renderResults(); renderList();
 </script>
+</html>

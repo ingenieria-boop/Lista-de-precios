@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: lista-de-precios
+    runtime: node
+    plan: free
+    buildCommand: "true"
+    startCommand: node server.js
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CODIGO_ACCESO
+        sync: false
