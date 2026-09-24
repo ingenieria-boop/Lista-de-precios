@@ -36,6 +36,8 @@ h1 span{color:var(--accent)}
 .meta{color:var(--muted);font-size:13px;letter-spacing:.04em;text-transform:uppercase}
 .grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:24px;align-items:start}
 @media (max-width:900px){.grid{grid-template-columns:1fr}}
+.grid>*{min-width:0}
+[hidden]{display:none!important}
 h2{font-family:var(--cond);font-weight:600;font-size:19px;text-transform:uppercase;letter-spacing:.05em;margin:0 0 10px;display:flex;align-items:center;gap:10px}
 h2 .count{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none}
 .searchbox{display:flex;gap:8px;margin-bottom:10px}
@@ -118,14 +120,82 @@ tr:last-child td{border-bottom:0}
 .corr{font-size:13px;color:var(--muted);margin:-4px 0 10px}
 .corr b{color:var(--accent);font-weight:600}
 .corr s{opacity:.7}
-.autobox{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 12px;border:1px dashed var(--accent);border-radius:6px;background:var(--accent-soft)}
-.autobox .btn.primary{display:inline-flex;align-items:center;gap:8px}
-.autobox .msg{font-size:13px;color:var(--ink)}
-.autobox .msg.bad{color:var(--bad)}
+.websearch{margin-top:16px;padding:16px;display:grid;gap:12px}
+.wshead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.wshead h3{font-family:var(--cond);font-weight:600;font-size:18px;text-transform:uppercase;letter-spacing:.05em;margin:0}
+.wsbadge{font:600 11px var(--sans);letter-spacing:.04em;padding:3px 8px;border-radius:3px;background:var(--sunk);color:var(--muted)}
+.wsbadge.on{background:var(--accent-soft);color:var(--accent)}
+.wsintro{margin:0;font-size:13px;color:var(--muted);max-width:70ch}
+.websearch .searchbox{margin:0}
+.btn.big{padding:10px 16px;font-size:14px;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+.wsmsg{font-size:13.5px}
+.wsmsg:empty{display:none}
+.wsmsg.bad{color:var(--bad)}
+.wslinks{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.wslinks:empty{display:none}
+.wslinks a{font:600 12.5px var(--sans);color:var(--accent);text-decoration:none;border:1px solid var(--line);background:var(--surface);padding:5px 9px;border-radius:5px}
+.wsresults{display:grid;gap:8px}
+.wsresults:empty{display:none}
+.wscard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);cursor:pointer}
+.wscard.sel{border-color:var(--accent);background:var(--accent-soft)}
+.wscard input[type=checkbox]{width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent)}
+.wsprod{font-weight:600;font-size:14px;word-break:break-word}
+.wsmeta{font-size:12.5px;color:var(--muted);margin-top:2px;display:flex;flex-wrap:wrap;gap:2px 8px;align-items:center}
+.wsmeta a{color:var(--accent);font-weight:600;text-decoration:none}
+.wsmeta .warn{color:var(--warn)}
+.wsprice{text-align:right;font:600 15px var(--mono);white-space:nowrap}
+.wsprice small{display:block;font:500 11px var(--sans);color:var(--muted)}
+.wscard.manual{cursor:default;grid-template-columns:auto minmax(0,1fr) 28px}
+.mgrid{display:grid;grid-template-columns:120px minmax(0,1fr);gap:6px}
+.mgrid input[type=url],.mgrid .chk{grid-column:1/-1}
+.mgrid .chk input{width:18px;height:18px;margin:0}
+.websearch input[type=text],.websearch input[type=url],.websearch input[type=number]{font:500 14px var(--sans);padding:9px 10px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink);min-width:0;width:100%}
+.websearch input[type=number]{font-family:var(--mono);text-align:right}
+.wsfoot{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:12px}
+.wsfoot #ws-manual{justify-self:start}
 .spin{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-.refinfo{grid-column:1/-1;font-size:11.5px;color:var(--muted);margin:-2px 0 4px}
-.refinfo .warn{color:var(--warn)}
+.mbar{display:none}
+@media (max-width:900px){
+  .mbar{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;align-items:center;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.12)}
+  .mbar[hidden]{display:none}
+  .mbar .mtxt{flex:1;min-width:0;font-size:13px}
+  .mbar .mtxt b{font-family:var(--mono);font-size:15px}
+  body.hasbar .wrap{padding-bottom:90px}
+}
+@media (max-width:560px){
+  .wrap{padding-inline:16px;padding-top:14px}
+  header{margin-bottom:14px}
+  .meta{font-size:11.5px}
+  .searchbox input,.websearch input[type=text],.websearch input[type=url],.websearch input[type=number],.qty{font-size:16px}
+  .searchbox input{padding:11px 12px}
+  .chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .chip{white-space:nowrap;padding:6px 10px}
+  .add{padding:8px 10px}
+  .webbar{flex-direction:column;align-items:stretch}
+  .webbar .btn{margin-left:0;padding:10px}
+  .webbar .wl{display:flex;flex-wrap:wrap;gap:6px}
+  .websearch{padding:14px}
+  .wscard{grid-template-columns:auto minmax(0,1fr)}
+  .wscard .wsprice{grid-column:2;text-align:left}
+  .wscard.manual{grid-template-columns:minmax(0,1fr) 28px}
+  .wscard.manual>input[type=checkbox]{display:none}
+  .mgrid{grid-template-columns:1fr}
+  .wsfoot .btn{width:100%}
+  .actions .btn{flex:1}
+  .status{flex-basis:100%;margin-left:0}
+  .list td{padding:8px 6px}
+  .panel>.tablewrap>table:not(.list) thead{display:none}
+  #results tr{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px 12px;padding:12px;border-bottom:1px solid var(--line)}
+  #results tr:last-child{border-bottom:0}
+  #results td{padding:0;border:0}
+  #results td:first-child{grid-column:1/-1}
+  #results td.num{text-align:left;font-size:16px;font-weight:600}
+  #results td.empty{grid-column:1/-1}
+  #results .best{background:var(--accent-soft)}
+  #results .best td{background:transparent}
+  .totals{padding:12px 10px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -139,7 +209,7 @@ tr:last-child td{border-bottom:0}
     <section>
       <h2>Buscar material <span class="count" id="rcount"></span></h2>
       <div class="searchbox">
-        <input id="q" type="search" autocomplete="off" placeholder="Ej: breaker 2x30, cable THHN 12 rojo, tubo EMT 3/4" value="tubo emt 3/4" aria-label="Buscar material">
+        <input id="q" type="search" autocomplete="off" placeholder="Ej: breaker 2x30, cable THHN 12 rojo, tubo EMT 3/4" value="" enterkeyhint="search" aria-label="Buscar material">
       </div>
       <div class="corr" id="corr" hidden></div>
       <div class="chips" id="chips"><span>Prueba:</span></div>
@@ -153,29 +223,26 @@ tr:last-child td{border-bottom:0}
         <div class="webbar" id="webbar"></div>
       </div>
 
-      <form class="panel webform" id="webform" hidden novalidate>
-        <h3>Precio tomado de la web</h3>
-        <p>Para materiales que no están en el listado. Registra mínimo 3 precios, cada uno con la tienda y el enlace de donde lo tomaste. La lista usa el promedio antes de IVA.</p>
-        <div class="autobox" id="w-auto">
-          <button type="button" class="btn primary" id="w-buscar">Buscar precios en la web</button>
-          <span class="msg" id="w-msg">Busca automáticamente en tiendas de Colombia y llena las referencias. Revisa cada enlace antes de agregar.</span>
+      <section class="panel websearch" id="websearch">
+        <div class="wshead"><h3>Buscador de precios web</h3><span class="wsbadge" id="ws-mode"></span></div>
+        <p class="wsintro">Para materiales que no están en el listado. Busca en tiendas de Colombia, marca mínimo 3 precios y se agrega a la lista el promedio antes de IVA.</p>
+        <form class="searchbox" id="ws-form" role="search">
+          <input id="ws-q" type="search" autocomplete="off" enterkeyhint="search" placeholder="Ej: tubo IMC 1/2 x 3 m" aria-label="Material a buscar en la web">
+          <button class="btn primary big" id="ws-go" type="submit">Buscar</button>
+        </form>
+        <div class="wsmsg" id="ws-msg" role="status"></div>
+        <div class="wslinks" id="ws-links"></div>
+        <div class="wsresults" id="ws-results"></div>
+        <div class="wsfoot" id="ws-foot" hidden>
+          <button type="button" class="btn" id="ws-manual">+ Precio manual</button>
+          <div class="webstats" id="ws-stats"></div>
+          <div class="field"><label for="ws-name">Nombre en la lista</label><input type="text" id="ws-name"></div>
+          <div class="formrow">
+            <button type="button" class="btn primary big" id="ws-add">Agregar a la lista</button>
+            <span class="err" id="ws-err"></span>
+          </div>
         </div>
-        <div class="field"><label for="w-art">Material</label><input type="text" id="w-art" placeholder="Ej: Tubo EMT 3/4 x 3 m"></div>
-        <div class="refs">
-          <div class="refhead"><span>Precio</span><span>Tienda / fuente</span><span>Enlace</span><span></span></div>
-          <div id="refs" class="refs"></div>
-        </div>
-        <div class="formrow">
-          <button type="button" class="btn" id="w-addref">+ Otra referencia</button>
-          <label class="chk"><input type="checkbox" id="w-iva" checked> Los precios de la web incluyen IVA</label>
-        </div>
-        <div class="webstats" id="w-stats"></div>
-        <div class="formrow">
-          <button type="submit" class="btn primary" id="w-save">Agregar a la lista</button>
-          <button type="button" class="btn" id="w-cancel">Cancelar</button>
-          <span class="err" id="w-err"></span>
-        </div>
-      </form>
+      </section>
 
       <p class="foot">Escribe como hablas en obra: el buscador traduce breaker → CCTO, conduleta → CONDULIN., colores (rojo → RJ) y medidas como 2x30 o 3/4". Si la primera fila no es lo que buscas, agrega la medida, el calibre, el amperaje o la marca.</p>
     </section>
@@ -200,6 +267,8 @@ tr:last-child td{border-bottom:0}
     </aside>
   </div>
 </div>
+
+<div class="mbar" id="mbar" hidden><div class="mtxt" id="mtxt"></div><button type="button" class="btn primary" id="mgo">Ver lista</button></div>
 
 <script>
 const $=id=>document.getElementById(id);
@@ -330,7 +399,7 @@ function presentacion(art){
 }
 function item(x){
   if(!x.web) return DATA[x.id];
-  const ps=x.refs.map(r=>r.p/(x.iva?1.19:1));
+  const ps=x.refs.map(r=>r.p/((r.i??x.iva)?1.19:1));
   return {art:x.art,pv:ps.reduce((a,b)=>a+b,0)/ps.length,min:Math.min(...ps),max:Math.max(...ps),est:'WEB',refs:x.refs,iva:x.iva};
 }
 function tags(d){
@@ -359,85 +428,110 @@ function renderWebbar(qs,r){
   wb.hidden=false;
   const weak = !r.length || r[0].s<0.6;
   wb.innerHTML = `<b>${weak?'No está en el listado. Busca el precio en la web:':'¿No es ninguno? Busca en la web:'}</b>`
-    + webLinks(qs).map(([n,u])=>`<a href="${u}" target="_blank" rel="noopener">${n} ↗</a>`).join('')
+    + `<span class="wl">`+webLinks(qs).map(([n,u])=>`<a href="${u}" target="_blank" rel="noopener">${n} ↗</a>`).join('')+`</span>`
     + `<button type="button" class="btn ${weak?'primary':''}" id="w-open">${AUTO.on?'Buscar precio en la web':'Registrar precios web'}</button>`;
 }
-function refRow(v){
-  const n=$('refs').children.length;
-  const d=document.createElement('div'); d.className='refrow';
-  d.innerHTML=`<input type="number" min="0" step="any" id="w-p-${n}" placeholder="$" aria-label="Precio"><input type="text" id="w-f-${n}" placeholder="Tienda" aria-label="Tienda"><input type="url" id="w-u-${n}" placeholder="https://…" aria-label="Enlace"><button type="button" class="rm" data-rmref aria-label="Quitar referencia">×</button>`;
-  $('refs').appendChild(d);
-  if(v){
-    const i=d.querySelectorAll('input'); i[0].value=v.precio; i[1].value=v.tienda; i[2].value=v.url;
-    const info=document.createElement('div'); info.className='refinfo';
-    info.innerHTML=esc(v.producto||'')+(v.presentacion?` · <b>${esc(v.presentacion)}</b>`:'')+(v.verificada?'':' · <span class="warn">enlace no confirmado, revísalo</span>');
-    d.appendChild(info);
-  }
-}
-function readRefs(){
-  return [...$('refs').children].map(r=>{const i=r.querySelectorAll('input');return {p:parseFloat(i[0].value),f:i[1].value.trim(),u:i[2].value.trim()};})
-    .filter(x=>x.p>0||x.f||x.u);
-}
-function validRef(x){ return x.p>0 && x.f && /^https?:\/\/\S+\.\S+/.test(x.u); }
-function webStats(){
-  const refs=readRefs().filter(validRef), iva=$('w-iva').checked;
-  if(!refs.length){ $('w-stats').innerHTML='<span class="muted">Completa precio, tienda y enlace en cada referencia.</span>'; return; }
-  const ps=refs.map(r=>r.p/(iva?1.19:1)), av=ps.reduce((a,b)=>a+b,0)/ps.length;
-  $('w-stats').innerHTML=`<span>${refs.length} de 3 mínimas</span><span>Promedio antes de IVA <b class="num">${fmt(av)}</b></span><span class="muted">Rango <span class="num">${fmt(Math.min(...ps))} – ${fmt(Math.max(...ps))}</span></span>`;
-}
-function openWeb(){
-  const f=$('webform'); f.hidden=false; $('refs').innerHTML=''; for(let i=0;i<3;i++) refRow();
-  $('w-art').value=$('q').value.trim(); $('w-err').textContent=''; webStats();
-  $('w-auto').hidden=!AUTO.on; setMsg('Busca automáticamente en tiendas de Colombia y llena las referencias. Revisa cada enlace antes de agregar.');
-  f.scrollIntoView({behavior:'smooth',block:'start'}); $('w-art').focus();
-  if(AUTO.on && $('w-art').value.length>=3) buscarWeb();
-}
-
-/* ---- búsqueda automática (servidor) ---- */
+/* ---- buscador de precios web ---- */
 const AUTO={on:false,codigo:false,busy:false};
-function setMsg(t,bad){ const m=$('w-msg'); m.textContent=t; m.className='msg'+(bad?' bad':''); }
+const WS={refs:[],material:''};
+const sinIva=r=>r.precio/(r.incluye_iva?1.19:1);
+const urlOk=u=>/^https?:\/\/\S+\.\S+/.test(u||'');
+const refOk=r=>r.precio>0 && (r.tienda||'').trim() && urlOk(r.url);
+function wsMsg(t,bad){ const m=$('ws-msg'); m.innerHTML=t||''; m.className='wsmsg'+(bad?' bad':''); }
 function getCodigo(){ try{return localStorage.getItem('elycon-codigo')||'';}catch(e){return '';} }
 function setCodigo(v){ try{ v?localStorage.setItem('elycon-codigo',v):localStorage.removeItem('elycon-codigo'); }catch(e){} }
-async function buscarWeb(){
+function wsMode(){
+  const b=$('ws-mode'); b.textContent=AUTO.on?'Búsqueda automática':'Modo manual'; b.className='wsbadge'+(AUTO.on?' on':'');
+  if(!AUTO.busy) $('ws-go').textContent=AUTO.on?'Buscar':'Ver enlaces';
+}
+function wsLinks(q){
+  $('ws-links').innerHTML = q ? '<span>Ver en:</span>'+webLinks(q).map(([n,u])=>`<a href="${u}" target="_blank" rel="noopener">${n} ↗</a>`).join('') : '';
+}
+function wsCard(r,i){
+  if(r.manual) return `<div class="wscard manual ${r.sel?'sel':''}">
+    <input type="checkbox" ${r.sel?'checked':''} data-sel="${i}" aria-label="Usar esta referencia">
+    <div class="mgrid">
+      <input type="number" min="0" step="any" inputmode="numeric" placeholder="Precio $" value="${r.precio||''}" data-mf="precio" data-ri="${i}" aria-label="Precio">
+      <input type="text" placeholder="Tienda" value="${esc(r.tienda||'')}" data-mf="tienda" data-ri="${i}" aria-label="Tienda">
+      <input type="url" placeholder="https://… enlace del producto" value="${esc(r.url||'')}" data-mf="url" data-ri="${i}" aria-label="Enlace">
+      <label class="chk"><input type="checkbox" ${r.incluye_iva?'checked':''} data-mf="incluye_iva" data-ri="${i}"> El precio incluye IVA</label>
+    </div>
+    <button type="button" class="rm" data-rmws="${i}" aria-label="Quitar">×</button></div>`;
+  return `<label class="wscard ${r.sel?'sel':''}">
+    <input type="checkbox" ${r.sel?'checked':''} data-sel="${i}">
+    <div><div class="wsprod">${esc(r.producto||r.tienda)}</div>
+      <div class="wsmeta"><span>${esc(r.tienda)}</span>${r.presentacion?`<span>· ${esc(r.presentacion)}</span>`:''}${r.coincidencia==='similar'?'<span class="warn">· similar, revisa</span>':''}${r.verificada===false?'<span class="warn">· enlace sin confirmar</span>':''}<a href="${esc(r.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">ver ↗</a></div></div>
+    <div class="wsprice">${fmt(r.precio)}<small>${r.incluye_iva?'con IVA':'sin IVA'}</small>${r.incluye_iva?`<small>${fmt(sinIva(r))} antes de IVA</small>`:''}</div>
+  </label>`;
+}
+function wsRender(){
+  $('ws-results').innerHTML = WS.refs.map(wsCard).join('');
+  $('ws-foot').hidden = !WS.refs.length && !WS.material;
+  wsStats();
+}
+function wsStats(){
+  const ok=WS.refs.filter(r=>r.sel && refOk(r));
+  if(!ok.length){ $('ws-stats').innerHTML='<span class="muted">Marca las referencias que coinciden con el material.</span>'; return; }
+  const ps=ok.map(sinIva), av=ps.reduce((a,b)=>a+b,0)/ps.length;
+  $('ws-stats').innerHTML=`<span><b>${ok.length}</b> de 3 mínimas</span><span>Promedio antes de IVA <b class="num">${fmt(av)}</b></span><span class="muted">Rango <span class="num">${fmt(Math.min(...ps))} – ${fmt(Math.max(...ps))}</span></span>`;
+}
+async function wsBuscar(){
+  const q=$('ws-q').value.trim();
+  wsLinks(q); $('ws-err').textContent='';
+  if(q.length<3){ wsMsg('Escribe el material con su medida. Ej: <b>tubo IMC 1/2</b>.',true); return; }
+  WS.material=q; $('ws-name').value=q;
+  if(!AUTO.on){
+    if(!WS.refs.length){ for(let i=0;i<3;i++) WS.refs.push({manual:true,sel:true,incluye_iva:true}); }
+    wsMsg('La búsqueda automática no está activa. Abre los enlaces y copia 3 precios con su tienda y enlace.'); wsRender(); return;
+  }
   if(AUTO.busy) return;
-  const mat=$('w-art').value.trim();
-  if(mat.length<3){ setMsg('Escribe el material con su medida.',true); return; }
   let cod=getCodigo();
   if(AUTO.codigo && !cod){ cod=(prompt('Código de acceso para la búsqueda web:')||'').trim(); if(!cod) return; setCodigo(cod); }
-  AUTO.busy=true; const b=$('w-buscar'); b.disabled=true; b.innerHTML='<span class="spin"></span>Buscando…';
-  setMsg(`Buscando “${mat}” en tiendas de Colombia. Tarda entre 20 y 60 segundos.`);
+  AUTO.busy=true; const b=$('ws-go'); b.disabled=true; b.innerHTML='<span class="spin"></span>Buscando';
+  wsMsg(`Buscando “${esc(q)}” en tiendas de Colombia… tarda entre 20 y 60 segundos.`);
+  WS.refs=[]; wsRender();
   try{
-    const r=await fetch('api/precios-web',{method:'POST',headers:{'Content-Type':'application/json','X-Codigo-Acceso':cod},body:JSON.stringify({material:mat})});
+    const r=await fetch('api/precios-web',{method:'POST',headers:{'Content-Type':'application/json','X-Codigo-Acceso':cod},body:JSON.stringify({material:q})});
     const d=await r.json().catch(()=>({error:'Respuesta inválida del servidor.'}));
     if(r.status===401) setCodigo('');
     if(!r.ok) throw new Error(d.error||('Error '+r.status));
-    const refs=d.referencias||[];
-    if(!refs.length){ setMsg('No encontré precios confiables en la web. Prueba con otra descripción o usa los enlaces de búsqueda.',true); return; }
-    $('refs').innerHTML=''; refs.forEach(x=>refRow(x)); while($('refs').children.length<3) refRow();
-    const todosIva=refs.every(x=>x.incluye_iva), ninguno=refs.every(x=>!x.incluye_iva);
-    if(todosIva) $('w-iva').checked=true; else if(ninguno) $('w-iva').checked=false;
-    webStats();
-    setMsg(`${refs.length} referencia${refs.length===1?'':'s'} encontrada${refs.length===1?'':'s'}${d.cache?' (búsqueda reciente)':''}. ${(!todosIva&&!ninguno)?'Ojo: unas incluyen IVA y otras no; ajusta los precios. ':''}${d.nota?d.nota+' ':''}Revisa cada enlace y la presentación antes de agregar.`);
-  }catch(e){ setMsg(e.message||'Falló la búsqueda.',true); }
-  finally{ AUTO.busy=false; b.disabled=false; b.textContent='Buscar precios en la web'; }
+    WS.refs=(d.referencias||[]).map(x=>({...x,sel:x.coincidencia!=='similar'}));
+    const n=WS.refs.length;
+    if(!n){
+      wsMsg(`No encontré precios confiables para “${esc(q)}”. ${d.nota?esc(d.nota)+' ':''}Agrega la medida o la presentación (ej. <b>tubo IMC 1/2 x 3 m</b>), o usa los enlaces y el precio manual.`,true);
+    } else {
+      wsMsg(`${n} precio${n===1?'':'s'} encontrado${n===1?'':'s'}${d.cache?' (búsqueda reciente)':''}. ${d.nota?esc(d.nota)+' ':''}${n<3?'Faltan referencias: busca con otra descripción o agrega un precio manual. ':''}Revisa cada enlace y la presentación antes de agregar.`);
+    }
+  }catch(e){ wsMsg(esc(e.message||'Falló la búsqueda.'),true); }
+  finally{ AUTO.busy=false; b.disabled=false; wsMode(); wsRender(); }
 }
-$('w-buscar').addEventListener('click',buscarWeb);
-fetch('api/estado').then(r=>r.ok?r.json():null).then(d=>{ if(d&&d.busqueda_web){ AUTO.on=true; AUTO.codigo=!!d.pide_codigo; renderResults(); } }).catch(()=>{});
+function openWeb(){
+  const q=$('q').value.trim(); $('ws-q').value=q;
+  $('websearch').scrollIntoView({behavior:'smooth',block:'start'});
+  if(q.length>=3) wsBuscar(); else $('ws-q').focus();
+}
 document.addEventListener('click',e=>{
   if(e.target.id==='w-open') openWeb();
-  if(e.target.matches('[data-rmref]')){ e.target.closest('.refrow').remove(); webStats(); }
+  const rm=e.target.closest('[data-rmws]'); if(rm){ WS.refs.splice(+rm.dataset.rmws,1); wsRender(); }
 });
-$('w-addref').addEventListener('click',()=>{ refRow(); });
-$('webform').addEventListener('input',webStats);
-$('w-cancel').addEventListener('click',()=>{ $('webform').hidden=true; });
-$('webform').addEventListener('submit',e=>{
-  e.preventDefault();
-  const art=$('w-art').value.trim(), all=readRefs(), ok=all.filter(validRef);
-  if(!art){ $('w-err').textContent='Escribe el nombre del material.'; return; }
-  if(ok.length<all.length){ $('w-err').textContent='Cada referencia necesita precio, tienda y un enlace que empiece por https://.'; return; }
-  if(ok.length<3){ $('w-err').textContent=`Faltan ${3-ok.length} referencia(s): se piden mínimo 3.`; return; }
-  lista.push({web:true,art,refs:ok,iva:$('w-iva').checked,q:1}); save(); renderList();
-  $('webform').hidden=true; flash(`Agregado con precio web: ${art}`);
+$('ws-form').addEventListener('submit',e=>{ e.preventDefault(); wsBuscar(); });
+$('ws-results').addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.sel!==undefined){ WS.refs[+t.dataset.sel].sel=t.checked; t.closest('.wscard').classList.toggle('sel',t.checked); wsStats(); }
+  if(t.dataset.mf==='incluye_iva'){ WS.refs[+t.dataset.ri].incluye_iva=t.checked; wsStats(); }
+});
+$('ws-results').addEventListener('input',e=>{
+  const t=e.target, f=t.dataset.mf; if(!f||f==='incluye_iva') return;
+  WS.refs[+t.dataset.ri][f] = f==='precio' ? (parseFloat(t.value)||0) : t.value.trim(); wsStats();
+});
+$('ws-manual').addEventListener('click',()=>{ WS.refs.push({manual:true,sel:true,incluye_iva:true}); wsRender(); const c=$('ws-results').lastElementChild; if(c) c.querySelector('input[type=number]').focus(); });
+$('ws-add').addEventListener('click',()=>{
+  const art=$('ws-name').value.trim(), sel=WS.refs.filter(r=>r.sel), ok=sel.filter(refOk);
+  if(!art){ $('ws-err').textContent='Escribe el nombre del material.'; return; }
+  if(ok.length<sel.length){ $('ws-err').textContent='Cada precio marcado necesita precio, tienda y un enlace que empiece por https://.'; return; }
+  if(ok.length<3){ $('ws-err').textContent=`Faltan ${3-ok.length} referencia(s): se piden mínimo 3.`; return; }
+  lista.push({web:true,art,refs:ok.map(r=>({p:r.precio,f:r.tienda.trim(),u:r.url.trim(),i:!!r.incluye_iva})),iva:true,q:1}); save(); renderList();
+  $('ws-err').textContent=''; flash(`Agregado con precio web: ${art}`); wsMsg(`Agregado a la lista: <b>${esc(art)}</b>.`);
 });
 
 /* ---- lista ---- */
@@ -475,7 +569,7 @@ function renderList(){
     tb.innerHTML = lista.map((x,i)=>{
       const d=item(x);
       return `<tr>
-        <td><div class="art" style="font-size:12.5px">${esc(d.art)}</div>${tags(d)}${d.est==='WEB'?`<ol class="reflist">${d.refs.map(r=>`<li>${fmt(r.p)} ${d.iva?'con IVA':'sin IVA'} · ${esc(r.f)} · <a href="${esc(r.u)}" target="_blank" rel="noopener">ver</a></li>`).join('')}</ol>`:''}</td>
+        <td><div class="art" style="font-size:12.5px">${esc(d.art)}</div>${tags(d)}${d.est==='WEB'?`<ol class="reflist">${d.refs.map(r=>`<li>${fmt(r.p)} ${(r.i??d.iva)?'con IVA':'sin IVA'} · ${esc(r.f)} · <a href="${esc(r.u)}" target="_blank" rel="noopener">ver</a></li>`).join('')}</ol>`:''}</td>
         <td class="num"><input class="qty" id="qty-${d.id}" type="number" min="0" step="any" value="${x.q}" data-q="${i}" aria-label="Cantidad"></td>
         <td class="num hide-sm">${d.est==='SIN_PRECIO'?'—':fmt(d.pv)}</td>
         <td class="num">${fmt(d.pv*x.q)}</td>
@@ -489,6 +583,8 @@ function renderList(){
     <span class="muted">IVA 19 %</span><span class="num muted">${fmt(sub*0.19)}</span>
     <span class="grand">Total con IVA</span><span class="grand num">${fmt(sub*1.19)}</span>${flag}`;
   $('copy').disabled = $('clear').disabled = !lista.length;
+  $('mbar').hidden = !lista.length; document.body.classList.toggle('hasbar', !!lista.length);
+  $('mtxt').innerHTML = `${lista.length} ítem${lista.length===1?'':'s'} · Total con IVA <b>${fmt(sub*1.19)}</b>`;
 }
 
 document.addEventListener('click',e=>{
@@ -513,7 +609,7 @@ function tsv(){
   const rows=[['Artículo','Cantidad','Precio unitario antes de IVA','Subtotal antes de IVA','Nota']];
   let sub=0;
   lista.forEach(x=>{ const d=item(x); sub+=d.pv*x.q;
-    const nota=[d.est==='WEB'?`Precio web, promedio antes de IVA de ${d.refs.length} referencias: `+d.refs.map(r=>`${r.f} ${fmt(r.p)} ${d.iva?'con IVA':'sin IVA'} (${r.u})`).join(' | '):'', d.est==='PRECIO_VARIABLE'?`Rango ${fmt(d.min)} – ${fmt(d.max)}`:'', d.est==='SIN_PRECIO'?'Sin precio en el listado':'', presentacion(d.art)].filter(Boolean).join('; ');
+    const nota=[d.est==='WEB'?`Precio web, promedio antes de IVA de ${d.refs.length} referencias: `+d.refs.map(r=>`${r.f} ${fmt(r.p)} ${(r.i??d.iva)?'con IVA':'sin IVA'} (${r.u})`).join(' | '):'', d.est==='PRECIO_VARIABLE'?`Rango ${fmt(d.min)} – ${fmt(d.max)}`:'', d.est==='SIN_PRECIO'?'Sin precio en el listado':'', presentacion(d.art)].filter(Boolean).join('; ');
     rows.push([d.art,String(x.q).replace('.',','),n(d.pv),n(d.pv*x.q),nota]); });
   rows.push(['','','Subtotal antes de IVA',n(sub),'']);
   rows.push(['','','IVA 19 %',n(sub*0.19),'']);
@@ -535,6 +631,8 @@ let ft; function flash(m){ $('status').textContent=m; clearTimeout(ft); ft=setTi
 });
 let tm; $('q').addEventListener('input',()=>{ clearTimeout(tm); tm=setTimeout(renderResults,120); });
 $('meta').textContent = `${DATA.length.toLocaleString('es-CO').replace(/,/g,'.')} artículos · precios de venta antes de IVA`;
-renderResults(); renderList();
+renderResults(); renderList(); wsMode();
+$('mgo').addEventListener('click',()=>document.querySelector('.side').scrollIntoView({behavior:'smooth',block:'start'}));
+fetch('api/estado').then(r=>r.ok?r.json():null).then(d=>{ if(d&&d.busqueda_web){ AUTO.on=true; AUTO.codigo=!!d.pide_codigo; wsMode(); renderResults(); } }).catch(()=>{});
 </script>
 </html>

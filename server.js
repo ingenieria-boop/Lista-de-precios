@@ -53,12 +53,15 @@ const PROMPT = material => `Busca en la web el precio actual en Colombia (pesos 
 Reglas:
 - Busca en tiendas o distribuidores que vendan en Colombia (por ejemplo Homecenter, Mercado Libre Colombia, Easy, distribuidores eléctricos colombianos). Nada de tiendas de otros países.
 - Cada precio debe venir de una página que hayas visto en los resultados de búsqueda, con su enlace exacto. No inventes precios ni enlaces.
-- El producto debe coincidir con el material pedido (misma medida, calibre, amperaje o presentación). Si la presentación es distinta (por ejemplo rollo de 100 m frente a metro), dilo en "presentacion".
+- Interpreta el lenguaje de obra: "tubo imc" = tubería conduit IMC galvanizada, "emt" = conduit EMT, "breaker" = interruptor automático / breaker enchufable, "thhn 12" = cable THHN/THWN calibre 12 AWG.
+- Si la descripción no trae medida, calibre o amperaje, busca la presentación más común en obra (por ejemplo tubo de 3 m de 1/2" o 3/4") y dilo en "nota".
+- Marca "coincidencia":"exacta" si el producto coincide con lo pedido (medida, calibre, amperaje), o "similar" si es un producto parecido pero con alguna diferencia. Incluye los similares solo si no hay suficientes exactos.
+- Indica la presentación del precio en "presentacion" (unidad, tubo de 3 m, rollo de 100 m, metro, caja x 10...).
 - Da el precio tal como lo muestra la tienda e indica si incluye IVA (en Colombia los precios al público normalmente lo incluyen).
-- Busca entre 3 y 5 referencias de tiendas distintas si es posible.
+- Busca entre 3 y 6 referencias, de tiendas distintas si es posible. Si no encuentras ninguna, devuelve la lista vacía y explica en "nota" qué dato falta.
 
 Responde SOLO con un JSON válido, sin texto adicional, con esta forma:
-{"referencias":[{"precio":12345,"incluye_iva":true,"tienda":"Nombre de la tienda","url":"https://...","producto":"nombre del producto en la tienda","presentacion":"unidad / tubo de 3 m / rollo 100 m ..."}],"nota":"observación breve o cadena vacía"}`;
+{"referencias":[{"precio":12345,"incluye_iva":true,"tienda":"Nombre de la tienda","url":"https://...","producto":"nombre del producto en la tienda","presentacion":"unidad / tubo de 3 m / rollo 100 m ...","coincidencia":"exacta"}],"nota":"observación breve en español o cadena vacía"}`;
 
 async function llamarClaude(messages) {
   const r = await fetch(API_URL, {
@@ -70,7 +73,7 @@ async function llamarClaude(messages) {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 3000,
+      max_tokens: 4000,
       messages,
       tools: [{
         type: 'web_search_20250305',
@@ -126,6 +129,7 @@ async function buscarPrecios(material) {
     messages.push({ role: 'assistant', content: data.content });
   }
   const out = extraerJSON(texto);
+  console.log(`[busqueda] "${material}" · urls vistas: ${vistas.size} · stop: ${data.stop_reason}`);
   if (!out || !Array.isArray(out.referencias)) throw new Error('No se pudo leer la respuesta de la búsqueda.');
 
   const refs = [], descartadas = [];
@@ -143,11 +147,13 @@ async function buscarPrecios(material) {
       url,
       producto: String(r.producto || '').slice(0, 200),
       presentacion: String(r.presentacion || '').slice(0, 80),
+      coincidencia: r.coincidencia === 'similar' ? 'similar' : 'exacta',
       verificada: vistas.has(n),
     };
     (ok ? refs : descartadas).push(ref);
   }
-  return { material, referencias: refs.slice(0, 5), descartadas: descartadas.length, nota: String(out.nota || ''), modelo: MODEL };
+  console.log(`[busqueda] "${material}" · validas: ${refs.length} · descartadas: ${descartadas.length}`);
+  return { material, referencias: refs.slice(0, 6), descartadas: descartadas.length, nota: String(out.nota || ''), modelo: MODEL };
 }
 
 const server = http.createServer(async (req, res) => {
